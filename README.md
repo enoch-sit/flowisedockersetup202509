@@ -514,12 +514,13 @@ sudo docker compose ps
 
 2. **Network Creation Failed - Subnet Exhaustion**
 
-   ```
+   ```text
    failed to create network: all predefined address pools have been fully subnetted
    ```
 
-   - **Solution**: The docker-compose.yml now includes a custom subnet (172.20.0.0/16)
-   - **Alternative fix**: Clean up unused Docker networks:
+   - **Solution**: The docker-compose.yml uses Docker's default bridge network to avoid conflicts
+   - **For private subnet environments**: Default bridge network prevents IP conflicts with existing infrastructure
+   - **Alternative fixes if still needed**:
 
      ```bash
      # Remove unused networks
@@ -530,6 +531,18 @@ sudo docker compose ps
      
      # Remove specific network if needed
      sudo docker network rm <network_name>
+     ```
+
+   - **Custom subnet (only if default doesn't work)**:
+     If you need a specific subnet that doesn't conflict with your infrastructure:
+
+     ```yaml
+     networks:
+       flowise-network:
+         driver: bridge
+         ipam:
+           config:
+             - subnet: 192.168.100.0/24  # Choose non-conflicting range
      ```
 
 3. **Port Conflicts**
