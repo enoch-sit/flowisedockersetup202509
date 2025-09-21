@@ -21,7 +21,7 @@ services:
       retries: 5
 
   flowise:
-    image: flowiseai/flowise:latest
+    image: flowiseai/flowise:3.0.4
     container_name: flowise
     restart: always
     depends_on:
