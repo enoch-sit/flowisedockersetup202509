@@ -501,10 +501,58 @@ sudo docker compose ps
 
 ## Troubleshooting
 
-1. **Port conflicts:** Make sure ports 80 and 443 are available
-2. **Docker not running:** Ensure Docker Desktop is started
-3. **Permission issues:** Run cmd as administrator if needed
-4. **SSL issues:** For local testing, disable SSL in nginx config
+### Common Issues and Solutions
+
+1. **Docker Compose Version Warning**
+
+   ```
+   WARN: the attribute `version` is obsolete, it will be ignored
+   ```
+
+   - **Solution**: This warning is harmless and has been fixed in the latest docker-compose.yml
+   - **Cause**: Modern Docker Compose doesn't require version specification
+
+2. **Network Creation Failed - Subnet Exhaustion**
+
+   ```
+   failed to create network: all predefined address pools have been fully subnetted
+   ```
+
+   - **Solution**: The docker-compose.yml now includes a custom subnet (172.20.0.0/16)
+   - **Alternative fix**: Clean up unused Docker networks:
+
+     ```bash
+     # Remove unused networks
+     sudo docker network prune -f
+     
+     # List all networks to check
+     sudo docker network ls
+     
+     # Remove specific network if needed
+     sudo docker network rm <network_name>
+     ```
+
+3. **Port Conflicts**
+   - Make sure port 3000 isn't used by other services
+   - Check with: `sudo netstat -tulpn | grep 3000`
+
+4. **Docker Not Running**
+   - Ensure Docker service is started: `sudo systemctl start docker`
+   - Check Docker status: `sudo systemctl status docker`
+
+5. **Permission Issues**
+   - Ensure your user is in the docker group: `sudo usermod -aG docker $USER`
+   - Log out and back in after adding to docker group
+   - Or use sudo with docker commands
+
+6. **Database Connection Issues**
+   - Wait for PostgreSQL to fully start (check logs): `sudo docker compose logs postgres`
+   - Verify database health: `sudo docker compose exec postgres pg_isready -U flowise_admin`
+
+7. **Nginx Configuration Issues**
+   - Test nginx config: `nginx -t`
+   - Check nginx error logs: `sudo tail -f /var/log/nginx/error.log`
+   - Verify Flowise is responding: `curl http://localhost:3000`
 
 ## Default Login
 
