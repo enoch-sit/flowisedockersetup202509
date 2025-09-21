@@ -545,7 +545,41 @@ sudo docker compose ps
              - subnet: 192.168.100.0/24  # Choose non-conflicting range
      ```
 
-3. **Port Conflicts**
+3. **How to Check Docker's Default IP Ranges**
+
+   ```bash
+   # Check Docker daemon's default address pools
+   sudo docker system info | grep -A 10 "Default Address Pools"
+   
+   # List and inspect all networks
+   sudo docker network ls
+   sudo docker network inspect bridge
+   
+   # Check Docker bridge interface
+   ip addr show docker0
+   
+   # Check your Flowise network (when running)
+   sudo docker network inspect flowise-production_flowise-network
+   
+   # Show all network subnets
+   sudo docker network ls -q | xargs sudo docker network inspect --format='{{.Name}}: {{range .IPAM.Config}}{{.Subnet}} {{end}}'
+   ```
+
+   **Your Docker daemon uses custom address pools:**
+   - **Base: 10.20.0.0/24** - Your system's configured default pool
+   - **Size: 24** - Each network gets a /24 subnet (256 addresses)
+   - **Network assignment**: Docker creates 10.20.0.0/24, 10.20.1.0/24, 10.20.2.0/24, etc.
+
+   **Standard Docker defaults (for reference):**
+   - 172.17.0.0/16 - Typical default bridge network
+   - 172.18.0.0/16 - Additional bridge networks
+
+   **Why your setup is different:**
+   - Your Docker daemon has been configured with custom address pools
+   - This avoids conflicts with enterprise/private network infrastructure
+   - The 10.20.x.x range is specifically chosen for your environment
+
+4. **Port Conflicts**
    - Make sure port 3000 isn't used by other services
    - Check with: `sudo netstat -tulpn | grep 3000`
 

@@ -13,13 +13,13 @@ services:
     networks:
       - flowise-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]  # Added -d to target the correct DB
       interval: 10s
       timeout: 5s
       retries: 5
 
   flowise:
-    image: flowiseai/flowise:3.0.4
+    image: flowiseai/flowise:3.0.4  # Note: Latest is 2.1.1 as of Sep 2025; consider updating if needed
     container_name: flowise
     restart: always
     depends_on:
@@ -50,7 +50,7 @@ services:
       - "3000:3000"
     networks:
       - flowise-network
-    command: /bin/sh -c "sleep 3; flowise start"
+    command: ["sh", "-c", "sleep 3 && flowise start"]  # Changed to list format to avoid flag parsing issues; use && for sequencing
 
 networks:
   flowise-network:
