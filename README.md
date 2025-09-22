@@ -28,16 +28,17 @@ Follow these steps in order for a complete setup:
 
    - **What it does**:
      - Runs secure-setup (if not done)
-     - Pulls Docker images (flowiseai/flowise:3.0.4, postgres:16-alpine)
+     - Pulls Docker images (flowiseai/flowise:latest, postgres:16-alpine)
      - Starts PostgreSQL and Flowise containers
      - Initializes database with record manager tables
    - **Wait time**: 2-3 minutes for full startup
+   - **New in this version**: Uses `flowiseai/flowise:latest` for automatic updates and simplified configuration
 
 4. **Nginx Integration**
-   - Copy contents of `nginx-integration.conf`
-   - Add to your existing Nginx server block
-   - Test config: `nginx -t`
-   - Reload: `nginx -s reload` or `systemctl reload nginx`
+   - Create or edit your nginx site configuration (see detailed instructions below)
+   - Test config: `sudo nginx -t`
+   - If test passes, reload: `sudo nginx -s reload` or `sudo systemctl reload nginx`
+   - Verify setup: Check that your domain loads the Flowise application
 
 ### 🚀 Daily Operations
 
@@ -288,10 +289,6 @@ If something goes wrong, follow this diagnostic order:
 
 1. **Navigate to the project directory:**
 
-   ```cmd
-   cd c:\Users\thank\Documents\thankGodForJesusChrist\thankGodForWork\proj01_chatbot_edu\week04\flowisesetup\flowise-production
-   ```
-
 2. **Update .env file with secure passwords:**
 
    - Edit `.env` file with a text editor
@@ -312,72 +309,85 @@ If something goes wrong, follow this diagnostic order:
 
 5. **Access Flowise:**
 
-   - <https://yourdomain.com/flowise2025>
+   - **Direct Domain Access**: <https://yourdomain.com>
 
 ## Nginx Integration
 
-Since you have existing Nginx with SSL, this setup only runs Flowise and PostgreSQL in Docker. Add the following to your existing Nginx server block:
+Since you have existing Nginx with SSL, this setup only runs Flowise and PostgreSQL in Docker. The application is configured to run on the root path of your domain.
+
+### Option 1: For Direct Domain Access (Recommended for Production)
+
+If you want to serve your application directly on your domain root, create or edit your nginx site configuration:
+
+```bash
+sudo nano /etc/nginx/sites-available/$HOSTNAME
+```
+
+Use this complete server block configuration:
 
 ```nginx
-# Add these location blocks to your existing server configuration
-location /flowise2025/ {
-    proxy_pass http://localhost:3000/;
-    proxy_http_version 1.1;
-    
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-    proxy_set_header X-Forwarded-Host $host;
-    proxy_set_header X-Forwarded-Prefix /flowise2025;
-    
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection "upgrade";
-    
-    proxy_connect_timeout 300s;
-    proxy_send_timeout 300s;
-    proxy_read_timeout 300s;
-    
-    proxy_buffering off;
-    proxy_request_buffering off;
+server {
+    listen 80;
+    server_name project-1-13;
+    return 301 https://$host$request_uri;
 }
 
-location /flowise2025/api/ {
-    proxy_pass http://localhost:3000/api/;
-    proxy_http_version 1.1;
-    
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-    
-    proxy_connect_timeout 600s;
-    proxy_send_timeout 600s;
-    proxy_read_timeout 600s;
-}
+server {
+    listen 443 ssl;
+    server_name project-1-13;
+    ssl_certificate /etc/nginx/ssl/dept-wildcard.eduhk/fullchain.crt;
+    ssl_certificate_key /etc/nginx/ssl/dept-wildcard.eduhk/dept-wildcard.eduhk.hk.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers on;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_stapling on;
+    ssl_stapling_verify on;
+    resolver 8.8.8.8 8.8.4.4 valid=300s;
+    ssl_trusted_certificate /etc/nginx/ssl/dept-wildcard.eduhk/fullchain.crt;
 
-location /flowise2025/socket.io/ {
-    proxy_pass http://localhost:3000/socket.io/;
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection "upgrade";
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
+    client_max_body_size 100M;  # Allows up to 100MB request bodies
+
+    location / {
+        proxy_pass http://localhost:3000;  # Proxy to your app on port 3000
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
 }
 ```
+
+**Key Configuration Notes:**
+
+- **`client_max_body_size 100M;`** - Essential for handling large file uploads (documents, images, etc.)
+- **Basic proxy configuration** - Routes all traffic directly to Flowise on port 3000
+- **SSL configuration** - Uses your existing wildcard certificate
+- **HTTP to HTTPS redirect** - Ensures all traffic uses secure connections
+
+### Testing and Applying Nginx Configuration
+
+After creating or modifying your nginx configuration, always test and reload:
+
+```bash
+# Test nginx configuration for syntax errors
+sudo nginx -t
+
+# If test is successful, reload nginx to apply changes
+sudo nginx -s reload
+
+# Alternative reload methods if needed
+sudo systemctl reload nginx
+# or
+sudo service nginx reload
+```
+
+**Important**: Always run `sudo nginx -t` first. If there are errors, fix them before reloading nginx.
 
 ## Understanding the Nginx Configuration
 
 ### Socket.IO Specific Handling Explained
 
-The Socket.IO configuration block is crucial for Flowise's real-time features:
-
-```nginx
-location /flowise2025/socket.io/ {
-    proxy_pass http://localhost:3000/socket.io/;
-    # ... WebSocket headers
-}
-```
+Socket.IO is crucial for Flowise's real-time features and requires proper WebSocket configuration in nginx.
 
 **What is Socket.IO?**
 
@@ -395,30 +405,24 @@ location /flowise2025/socket.io/ {
 - The `Upgrade` and `Connection` headers tell nginx to allow this protocol upgrade
 - Without this configuration, real-time features would break and you'd only see static content
 
-**What happens without this block?**
+**What happens without proper WebSocket configuration?**
 
 - ❌ Chat messages would require manual page refresh to appear
 - ❌ Flow execution would appear frozen
 - ❌ Real-time debugging wouldn't work
 - ❌ Connection status would be unreliable
 
-**The three location blocks work together:**
-
-1. `/flowise2025/` - Main Flowise application (UI, pages, static content)
-2. `/flowise2025/api/` - REST API calls (creating flows, authentication, data operations)
-3. `/flowise2025/socket.io/` - Real-time WebSocket connections (live updates, chat, debugging)
-
 ### 🔄 Nginx Proxy Concepts Explained
 
-Understanding the key proxy directives used in the Flowise API configuration:
+Understanding the key proxy directives used in the root path Flowise configuration:
 
-#### **`proxy_pass http://localhost:3000/api/;`**
+#### **`proxy_pass http://localhost:3000;`**
 
-- **What it does**: Forwards all requests from `/flowise2025/api/` to `http://localhost:3000/api/`
-- **URL Rewriting**: The trailing slash removes the matched location prefix
-  - **Client requests**: `https://yourdomain.com/flowise2025/api/v1/chatflows`
+- **What it does**: Forwards all requests from your domain root to `http://localhost:3000`
+- **Direct routing**: No path manipulation needed since both source and destination are at root
+  - **Client requests**: `https://yourdomain.com/api/v1/chatflows`
   - **Nginx forwards to**: `http://localhost:3000/api/v1/chatflows`
-- **Purpose**: Routes API calls to your Flowise Docker container running on port 3000
+- **Purpose**: Routes all traffic to your Flowise Docker container running on port 3000
 
 #### **`proxy_http_version 1.1;`**
 
@@ -434,7 +438,7 @@ Understanding the key proxy directives used in the Flowise API configuration:
 **`proxy_set_header Host $host;`**
 
 - **Preserves**: The original domain name from the client request
-- **Example**: `yourdomain.com/flowise2025/api/` → Backend sees `Host: yourdomain.com`
+- **Example**: `yourdomain.com/api/` → Backend sees `Host: yourdomain.com`
 - **Important for**: CORS validation, URL generation, security checks
 
 **`proxy_set_header X-Real-IP $remote_addr;`**
@@ -597,9 +601,12 @@ sudo docker compose ps
    - Verify database health: `sudo docker compose exec postgres pg_isready -U flowise_admin`
 
 7. **Nginx Configuration Issues**
-   - Test nginx config: `nginx -t`
+   - Test nginx config: `sudo nginx -t`
+   - If config test passes, reload nginx: `sudo nginx -s reload`
    - Check nginx error logs: `sudo tail -f /var/log/nginx/error.log`
+   - Check nginx access logs: `sudo tail -f /var/log/nginx/access.log`
    - Verify Flowise is responding: `curl http://localhost:3000`
+   - Check if nginx is running: `sudo systemctl status nginx`
 
 ## Default Login
 
@@ -610,7 +617,7 @@ sudo docker compose ps
 
 ```text
 flowise-production/
-├── docker-compose.yml          # Main Docker configuration (Flowise 3.0.4 + PostgreSQL)
+├── docker-compose.yml          # Main Docker configuration (Flowise latest + PostgreSQL)
 ├── .env                        # Environment variables (created by secure-setup)
 ├── .env.example               # Template for environment variables
 ├── nginx-integration.conf      # Nginx configuration for existing server integration

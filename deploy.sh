@@ -25,6 +25,14 @@ echo "=== Current status of services ==="
 # Check the status of the running containers
 sudo docker-compose ps
 
-echo "=== Tailing logs (press Ctrl+C to exit) ==="
-# Follow the logs for all services
-sudo docker-compose logs -f
+echo "=== Deployment complete ==="
+echo "Services are running in the background."
+echo ""
+echo "To view logs:"
+echo "  sudo docker-compose logs -f"
+echo ""
+echo "To check service status:"
+echo "  sudo docker-compose ps"
+echo ""
+echo "To monitor system health:"
+echo "  ./monitor.sh"
