@@ -21,7 +21,7 @@ services:
   flowise:
     image: flowiseai/flowise:latest
     container_name: flowise
-    restart: on-failure
+    restart: always # Set back to always for production
     depends_on:
       postgres:
         condition: service_healthy
@@ -45,8 +45,10 @@ services:
       - "3000:3000"
     networks:
       - flowise-network
-    entrypoint: |
-      sh -c 'echo "Received arguments:"; echo "Arg 0: $0"; echo "Arg 1: $1"; echo "Arg 2: $2";'
+    # --- The Final Correct Command ---
+    # This separates the executable from the command string, which is the most robust method.
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["sleep 3 && flowise start"]
 
 networks:
   flowise-network:
