@@ -54,9 +54,9 @@ services:
       - "3000:3000" # Expose port 3000 to the host
     networks:
       - flowise-network
-    # --- CORRECTED ENTRYPOINT AND COMMAND ---
-    entrypoint: ["sh", "-c"]
-    command: "sleep 3 && flowise start"
+    # --- CORRECTED ENTRYPOINT ---
+    # Use the 'shell form' for the entrypoint to ensure the command is parsed correctly.
+    entrypoint: sh -c 'sleep 3 && flowise start'
 
 networks:
   flowise-network:
