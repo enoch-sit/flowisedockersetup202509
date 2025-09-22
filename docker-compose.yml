@@ -34,8 +34,10 @@ services:
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
       DATABASE_NAME: ${POSTGRES_DB}
       # --- ADD TRAILING SLASHES ---
-      API_BASE_PATH: /flowise/
-      VITE_APP_BASE_PATH: /flowise/
+      # default base path
+      #API_BASE_PATH: /flowise/
+      #VITE_APP_BASE_PATH: /flowise/
+      
       FLOWISE_USERNAME: ${FLOWISE_USERNAME}
       FLOWISE_PASSWORD: ${FLOWISE_PASSWORD}
       FLOWISE_SECRETKEY_OVERWRITE: ${FLOWISE_SECRETKEY_OVERWRITE}
