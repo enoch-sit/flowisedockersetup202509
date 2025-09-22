@@ -19,7 +19,7 @@ services:
       retries: 5
 
   flowise:
-    image: flowiseai/flowise:latest # Using latest to ensure env vars are supported
+    image: flowiseai/flowise:3.0.4 # Using latest to ensure env vars are supported
     container_name: flowise
     restart: always
     depends_on:
