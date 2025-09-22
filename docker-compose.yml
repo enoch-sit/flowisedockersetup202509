@@ -45,7 +45,8 @@ services:
       - "3000:3000"
     networks:
       - flowise-network
-    entrypoint: sh -c 'echo "Received arguments:"; echo "Arg 0: $0"; echo "Arg 1: $1"; echo "Arg 2: $2";'
+    entrypoint: |
+      sh -c 'echo "Received arguments:"; echo "Arg 0: $0"; echo "Arg 1: $1"; echo "Arg 2: $2";'
 
 networks:
   flowise-network:
