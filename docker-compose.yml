@@ -33,11 +33,7 @@ services:
       DATABASE_USER: ${POSTGRES_USER}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
       DATABASE_NAME: ${POSTGRES_DB}
-      # --- ADD TRAILING SLASHES ---
-      # default base path
-      #API_BASE_PATH: /flowise/
-      #VITE_APP_BASE_PATH: /flowise/
-      
+      # API_BASE_PATH and VITE_APP_BASE_PATH are removed
       FLOWISE_USERNAME: ${FLOWISE_USERNAME}
       FLOWISE_PASSWORD: ${FLOWISE_PASSWORD}
       FLOWISE_SECRETKEY_OVERWRITE: ${FLOWISE_SECRETKEY_OVERWRITE}
@@ -49,6 +45,7 @@ services:
       - "3000:3000"
     networks:
       - flowise-network
+    # The entrypoint/command can be simplified back to default if you prefer
     entrypoint: ["/bin/sh", "-c"]
     command: ["sleep 3 && flowise start"]
 
