@@ -55,6 +55,7 @@ services:
     networks:
       - flowise-network
     command: ["sh", "-c", "sleep 3 && flowise start"]
+    command: sh -c "sleep 3 && flowise start"
 
 networks:
   flowise-network:
