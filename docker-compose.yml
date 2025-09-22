@@ -1,4 +1,5 @@
 services:
+  # ... (postgres service remains the same)
   postgres:
     image: postgres:16-alpine
     container_name: flowise-postgres
@@ -21,7 +22,7 @@ services:
   flowise:
     image: flowiseai/flowise:latest
     container_name: flowise
-    restart: always # Set back to always for production
+    restart: always
     depends_on:
       postgres:
         condition: service_healthy
@@ -32,8 +33,9 @@ services:
       DATABASE_USER: ${POSTGRES_USER}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
       DATABASE_NAME: ${POSTGRES_DB}
-      API_BASE_PATH: /flowise
-      VITE_APP_BASE_PATH: /flowise
+      # --- ADD TRAILING SLASHES ---
+      API_BASE_PATH: /flowise/
+      VITE_APP_BASE_PATH: /flowise/
       FLOWISE_USERNAME: ${FLOWISE_USERNAME}
       FLOWISE_PASSWORD: ${FLOWISE_PASSWORD}
       FLOWISE_SECRETKEY_OVERWRITE: ${FLOWISE_SECRETKEY_OVERWRITE}
@@ -45,8 +47,6 @@ services:
       - "3000:3000"
     networks:
       - flowise-network
-    # --- The Final Correct Command ---
-    # This separates the executable from the command string, which is the most robust method.
     entrypoint: ["/bin/sh", "-c"]
     command: ["sleep 3 && flowise start"]
 
