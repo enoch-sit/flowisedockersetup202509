@@ -48,6 +48,19 @@ services:
     entrypoint: ["/bin/sh", "-c"]
     command: ["sleep 3 && flowise start"]
 
+  chroma:
+    image: chromadb/chroma:latest
+    container_name: flowise-chroma
+    restart: always
+    environment:
+      IS_PERSISTENT: "TRUE"
+    volumes:
+      - chroma_data:/chroma/chroma
+    ports:
+      - "8000:8000"
+    networks:
+      - flowise-network
+
 networks:
   flowise-network:
     driver: bridge
@@ -55,3 +68,4 @@ networks:
 volumes:
   postgres_data:
   flowise_data:
+  chroma_data:
