@@ -1,1 +1,57 @@
-version: '3.8'\nservices:\n  # Existing services\n  service1:\n    image: example/service1\n    ports:\n      - '8080:80'\n  service2:\n    image: example/service2\n    environment:\n      - VAR=value\n  # New Chroma service\n  chroma:\n    image: chromadb/chroma\n    ports:\n      - '8000:8000'\n    environment:\n      - CHROMA_DB_PATH=/data/chroma.db\n    volumes:\n      - chroma_data:/data\n\nvolumes:\n  chroma_data: {}\n
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: flowise-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    networks:
+      - flowise-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  flowise:
+    image: flowiseai/flowise:latest
+    container_name: flowise
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_TYPE: postgres
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_USER: ${POSTGRES_USER}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      DATABASE_NAME: ${POSTGRES_DB}
+      # API_BASE_PATH and VITE_APP_BASE_PATH are removed
+      FLOWISE_USERNAME: ${FLOWISE_USERNAME}
+      FLOWISE_PASSWORD: ${FLOWISE_PASSWORD}
+      FLOWISE_SECRETKEY_OVERWRITE: ${FLOWISE_SECRETKEY_OVERWRITE}
+      PORT: 3000
+      FLOWISE_FILE_SIZE_LIMIT: 50mb
+    volumes:
+      - flowise_data:/root/.flowise
+    ports:
+      - "3000:3000"
+    networks:
+      - flowise-network
+    # The entrypoint/command can be simplified back to default if you prefer
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["sleep 3 && flowise start"]
+
+networks:
+  flowise-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  flowise_data:
